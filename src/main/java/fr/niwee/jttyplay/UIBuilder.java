@@ -10,20 +10,7 @@ import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JRadioButtonMenuItem;
-import javax.swing.JSeparator;
-import javax.swing.JSlider;
-import javax.swing.JToggleButton;
-import javax.swing.JToolBar;
-import javax.swing.KeyStroke;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.event.ChangeListener;
 
 /**
@@ -233,8 +220,7 @@ public class UIBuilder {
         rv.setToolTipText(tooltip);
         rv.setHorizontalTextPosition(SwingConstants.CENTER);
         rv.setVerticalTextPosition(SwingConstants.BOTTOM);
-        rv.setIcon(new ImageIcon(
-                getClass().getResource("/jettyplay/resources/"+iconFilename)));
+        rv.setIcon(new ImageIcon((getClass().getClassLoader().getResource(iconFilename))));
         connectComponents(rv, parent, null);
         enablableComponents.add(rv);
         return rv;
@@ -258,8 +244,7 @@ public class UIBuilder {
         rv.setToolTipText(tooltip);
         rv.setHorizontalTextPosition(SwingConstants.CENTER);
         rv.setVerticalTextPosition(SwingConstants.BOTTOM);
-        rv.setIcon(new ImageIcon(
-                getClass().getResource("/jettyplay/resources/"+iconFilename)));
+        rv.setIcon(new ImageIcon((getClass().getClassLoader().getResource(iconFilename))));
         connectComponents(rv, parent, null);
         if (enablable)
             enablableComponents.add(rv);

@@ -141,11 +141,7 @@ public class FindDialog extends javax.swing.JDialog {
         findNextButton.setMnemonic('f');
         findNextButton.setText("Find Next");
         findNextButton.setName("findNextButton"); // NOI18N
-        findNextButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                findNextButtonActionPerformed(evt);
-            }
-        });
+        findNextButton.addActionListener(this::findNextButtonActionPerformed);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 5;
@@ -156,11 +152,7 @@ public class FindDialog extends javax.swing.JDialog {
         closeButton.setMnemonic('c');
         closeButton.setText("Close");
         closeButton.setName("closeButton"); // NOI18N
-        closeButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                closeButtonActionPerformed(evt);
-            }
-        });
+        closeButton.addActionListener(this::closeButtonActionPerformed);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 5;

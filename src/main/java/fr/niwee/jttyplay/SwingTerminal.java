@@ -137,11 +137,7 @@ public class SwingTerminal extends JComponent {
     @Override
     public void print(Graphics g) {
         final SwingTerminal finalThis = this;
-        renderer.print(g, new Printable(){
-            public void print(Graphics g){
-                finalThis.chainPrinting(g);
-            }
-        });
+        renderer.print(g, finalThis::chainPrinting);
     }
 
     public VDUBuffer getVDUBuffer() {

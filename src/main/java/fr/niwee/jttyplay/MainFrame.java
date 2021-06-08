@@ -24,7 +24,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
@@ -72,7 +71,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 /**
  * The application's main frame.
@@ -96,33 +94,25 @@ public class MainFrame extends JFrame
         sidebarToolbar.add(sidebarPane);
         syncAntialiasingWithMenu();
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                setIconImage(new ImageIcon(MainFrame.class.getClassLoader().
-                        getResource("jettyplay/resources/icon.png")).getImage());
-            }
-        });
+        SwingUtilities.invokeLater(() -> setIconImage(new ImageIcon(MainFrame.class.getClassLoader().
+                getResource("icon.png")).getImage()));
         // set no file to be open
         currentSource = null;
 
         // initialize the streaming timer
         // all this one does is change the max time on a streaming recording
         // whose length is not known (i.e. still streaming)
-        streamingTimer = new Timer(500, new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Ttyrec r = getCurrentTtyrec();
-                try {
-                    if (r != null && r.isStreaming()
-                            && !currentSource.knownLength()) {
-                        r.setLengthOffset((double) (new Date().getTime()
-                                - r.getLastActivity().getTime()) / 1000.0);
-                        synchSliderMaximum();
-                        updateSidebar();
-                    }
-                } catch (NullPointerException ex) {
-                    // do nothing; source must have vanished asynchronously
-                    // while trying to run the command
+        streamingTimer = new Timer(500, e -> {
+            Ttyrec r = getCurrentTtyrec();
+            try {
+                if (r != null && r.isStreaming() && !currentSource.knownLength()) {
+                    r.setLengthOffset((double) (new Date().getTime() - r.getLastActivity().getTime()) / 1000.0);
+                    synchSliderMaximum();
+                    updateSidebar();
                 }
+            } catch (NullPointerException ex) {
+                // do nothing; source must have vanished asynchronously
+                // while trying to run the command
             }
         });
         streamingTimer.start();
@@ -226,11 +216,7 @@ public class MainFrame extends JFrame
         JPanel mainToolbarPanel = uiBuilder.addJPanel(mainPanel, BorderLayout.CENTER);
 
         timeSlider = uiBuilder.addJSlider(timePanel, BorderLayout.CENTER,
-                "Seek to time", new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                timeSliderStateChanged(evt);
-            }
-        });
+"Seek to time", this::timeSliderStateChanged);
         timeSlider.setUI(new LoadingProgressSliderUI(timeSlider,this));
         timeSlider.setValue(0);
         timeSlider.setMaximum(1);
@@ -242,37 +228,16 @@ public class MainFrame extends JFrame
 
         mainToolbar = uiBuilder.addJToolBar(mainToolbarPanel, BorderLayout.NORTH);
 
-        uiBuilder.addJButton( mainToolbar, "Go to the start of the recording", "first.png", new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goToStart(evt);
-            }
-        });
-        uiBuilder.addJButton( mainToolbar, "Go backward one frame", "backframe.png", new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goBackOneFrame(evt);
-            }
-        });
-        playButton = uiBuilder.addJToggleButton( mainToolbar, "Start or pause playback", "play.png", true, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                playButtonChanged(evt);
-            }
-        });
-        uiBuilder.addJButton( mainToolbar, "Go forward one frame", "forwardframe.png", new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goForwardOneFrame(evt);
-            }
-        });
-        uiBuilder.addJButton( mainToolbar, "Go to the end of the recording", "last.png", new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goToEnd(evt);
-            }
-        });
+        uiBuilder.addJButton( mainToolbar, "Go to the start of the recording", "first.png", this::goToStart);
+        uiBuilder.addJButton( mainToolbar, "Go backward one frame", "backframe.png", this::goBackOneFrame);
+        playButton = uiBuilder.addJToggleButton( mainToolbar, "Start or pause playback", "play.png", true, this::playButtonChanged);
+        uiBuilder.addJButton( mainToolbar, "Go forward one frame", "forwardframe.png", this::goForwardOneFrame);
+        uiBuilder.addJButton( mainToolbar, "Go to the end of the recording", "last.png", this::goToEnd);
         uiBuilder.addJSeparator(mainToolbar);
 
         /* We do this one by hand, because it's a little complex and because
            there's no code reuse benefit from uiBuilder. */
-        speedSpinner = new JSpinner(new SpinnerNumberModel(Double.valueOf(1.0d),
-                null, null, Double.valueOf(1.0d)));
+        speedSpinner = new JSpinner(new SpinnerNumberModel(1.0d, null, null, 1.0d));
         speedSpinner.setToolTipText("Speed at which to replay the ttyrec");
         speedSpinner.setEditor(new JSpinner.DefaultEditor(speedSpinner));
         speedSpinner.setFocusable(false);
@@ -293,20 +258,12 @@ public class MainFrame extends JFrame
                 speedSpinnerMouseClicked(evt);
             }
         });
-        speedSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                speedSpinnerStateChanged(evt);
-            }
-        });
+        speedSpinner.addChangeListener(this::speedSpinnerStateChanged);
         mainToolbar.add(speedSpinner);
         
         autoskipButton = uiBuilder.addJToggleButton( mainToolbar,
                                                      "Automatically skip past long periods of inactivity",
-                                                     "autoskip.png", false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                autoskipButtonStateChanged(evt);
-            }
-        });
+                                                     "autoskip.png", false, this::autoskipButtonStateChanged);
 
         sidebarToolbarPanel = uiBuilder.addJPanel(mainToolbarPanel,
                 BorderLayout.CENTER);
@@ -322,11 +279,7 @@ public class MainFrame extends JFrame
         sidebarTypeComboBox.setFocusable(false);
         sidebarTypeComboBox.setMaximumSize(sidebarTypeComboBox.getPreferredSize());
         sidebarTypeComboBox.setName("sidebarTypeComboBox"); // NOI18N
-        sidebarTypeComboBox.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent evt) {
-                sidebarTypeComboBoxItemStateChanged(evt);
-            }
-        });
+        sidebarTypeComboBox.addItemListener(this::sidebarTypeComboBoxItemStateChanged);
         sidebarTypeComboBox.addHierarchyBoundsListener(new HierarchyBoundsListener() {
             public void ancestorMoved(HierarchyEvent evt) {
             }
@@ -340,297 +293,135 @@ public class MainFrame extends JFrame
 
         fileMenu = uiBuilder.addJMenu(menuBar, 'f', "File");
         uiBuilder.addJMenuItem(fileMenu, 'o', "Open...", "control O", false,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                openMenuItemActionPerformed(evt);
-            }
-        });
+                this::openMenuItemActionPerformed);
         uiBuilder.addJMenuItem(fileMenu, 'u', "Open URL...", "control shift O",
-                false,new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                openURLMenuItemActionPerformed(evt);
-            }
-        });
+                false, this::openURLMenuItemActionPerformed);
         uiBuilder.addJSeparator(fileMenu);
         uiBuilder.addJMenuItem(fileMenu, 'v', "Save as Video...", null,
-                true, new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                saveAsVideoMenuItemActionPerformed(evt);
-            }
-        });
+                true, this::saveAsVideoMenuItemActionPerformed);
         uiBuilder.addJSeparator(fileMenu);
         uiBuilder.addJMenuItem(fileMenu, 'x', "Exit", "control X", false,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                exitMenuItemActionPerformed(evt);
-            }
-        });
+                this::exitMenuItemActionPerformed);
 
         JMenu editMenu = uiBuilder.addJMenu(menuBar, 'e', "Edit");
         uiBuilder.addJMenuItem(editMenu, 'f', "Find...", "control F", true,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                findMenuItemActionPerformed(evt);
-            }
-        });
+                this::findMenuItemActionPerformed);
         uiBuilder.addJSeparator(editMenu);
         screenshotMenu = uiBuilder.addJMenu(editMenu, 'c',
                 "Copy Screenshot");
         uiBuilder.addJMenuItem(screenshotMenu, 'p', "As Plain Text",
-                null, true, new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                plainTextScreenshotMenuItemActionPerformed(evt);
-            }
-        });
+                null, true, this::plainTextScreenshotMenuItemActionPerformed);
         uiBuilder.addJMenuItem(screenshotMenu, 'h', "As HTML",
-                null, true, new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                htmlScreenshotMenuItemActionPerformed(evt);
-            }
-        });
+                null, true, this::htmlScreenshotMenuItemActionPerformed);
         uiBuilder.addJMenuItem(screenshotMenu, 'i', "As Image",
-                null, true, new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                imageScreenshotMenuItemActionPerformed(evt);
-            }
-        });
+                null, true, this::imageScreenshotMenuItemActionPerformed);
 
         viewMenu = uiBuilder.addJMenu(menuBar, 'v', "View");
         fullScreenMenuItem = uiBuilder.addJCheckBoxMenuItem(viewMenu, 'f',
-                "Full Screen", "F11", false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                fullScreenMenuItemStateChanged(evt);
-            }
-        });
+                "Full Screen", "F11", false, this::fullScreenMenuItemStateChanged);
         fullScreenMenuItem.setEnabled(
                 GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice().isFullScreenSupported());
         sidebarMenuItem = uiBuilder.addJCheckBoxMenuItem(viewMenu, 'i',
-                "Information Bar", null, false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                sidebarMenuItemStateChanged(evt);
-            }
-        });
+                "Information Bar", null, false, this::sidebarMenuItemStateChanged);
         sidebarMenuItem.setSelected(true);
         toolBarMenuItem = uiBuilder.addJCheckBoxMenuItem(viewMenu, 't',
-                "Toolbar", null, false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                toolBarMenuItemStateChanged(evt);
-            }
-        });
+                "Toolbar", null, false, this::toolBarMenuItemStateChanged);
         toolBarMenuItem.setSelected(true);
         menuBarMenuItem = uiBuilder.addJCheckBoxMenuItem(viewMenu, 'm',
-                "Menu Bar", "control M", false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                menuBarMenuItemStateChanged(evt);
-            }
-        });
+                "Menu Bar", "control M", false, this::menuBarMenuItemStateChanged);
         menuBarMenuItem.setSelected(true);
         controlBarMenuItem = uiBuilder.addJCheckBoxMenuItem(viewMenu, 'c',
-                "Control Bar", null, false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                controlBarMenuItemStateChanged(evt);
-            }
-        });
+                "Control Bar", null, false, this::controlBarMenuItemStateChanged);
         controlBarMenuItem.setSelected(true);
         uiBuilder.addJSeparator(viewMenu);
         ButtonGroup terminalSizeGroup = new ButtonGroup();
         JMenu terminalSizeMenu = uiBuilder.addJMenu(viewMenu, 'z', "Terminal Size");
         autodetectTerminalSizeMenuItem = uiBuilder.addJRadioButtonMenuItem(
-                terminalSizeMenu, 'a', "Autodetect", null, true, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                autodetectTerminalSizeMenuItemActionPerformed(evt);
-            }
-        });
+                terminalSizeMenu, 'a', "Autodetect", null, true, this::autodetectTerminalSizeMenuItemActionPerformed);
         terminalSizeGroup.add(autodetectTerminalSizeMenuItem);
         autodetectTerminalSizeMenuItem.setSelected(true);
         fixedTerminalSizeMenuItem = uiBuilder.addJRadioButtonMenuItem(
                 terminalSizeMenu, 'f', "Fixed Size...", null, true,
-                new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {}
-        });
-        fixedTerminalSizeMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                fixedTerminalSizeMenuItemActionPerformed(evt);
-            }
-        });
+                evt -> {});
+        fixedTerminalSizeMenuItem.addActionListener(this::fixedTerminalSizeMenuItemActionPerformed);
         encodingMenu = uiBuilder.addJMenu(viewMenu, 'e', "Encoding");
         ButtonGroup encodingButtonGroup = new ButtonGroup();
         autodetectEncodingMenuItem = uiBuilder.addJRadioButtonMenuItem(
-                encodingMenu, 'a', "Autodetect", null, true, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                autodetectEncodingMenuItemStateChanged(evt);
-            }
-        });
+                encodingMenu, 'a', "Autodetect", null, true, this::autodetectEncodingMenuItemStateChanged);
         encodingButtonGroup.add(autodetectEncodingMenuItem);
         autodetectEncodingMenuItem.setSelected(true);
         unicodeEncodingMenuItem = uiBuilder.addJRadioButtonMenuItem(
-                encodingMenu, 'u', "Unicode (UTF-8)", null, true, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                unicodeEncodingMenuItemStateChanged(evt);
-            }
-        });
+                encodingMenu, 'u', "Unicode (UTF-8)", null, true, this::unicodeEncodingMenuItemStateChanged);
         encodingButtonGroup.add(unicodeEncodingMenuItem);
         ibmEncodingMenuItem = uiBuilder.addJRadioButtonMenuItem(
-                encodingMenu, 'i', "IBM (IBM850)", null, true, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                ibmEncodingMenuItemStateChanged(evt);
-            }
-        });
+                encodingMenu, 'i', "IBM (IBM850)", null, true, this::ibmEncodingMenuItemStateChanged);
         encodingButtonGroup.add(autodetectEncodingMenuItem);
         latin1EncodingMenuItem = uiBuilder.addJRadioButtonMenuItem(
-                encodingMenu, 'l', "Latin-1 (ISO-8859-1)", null, true, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                latin1EncodingMenuItemStateChanged(evt);
-            }
-        });
+                encodingMenu, 'l', "Latin-1 (ISO-8859-1)", null, true, this::latin1EncodingMenuItemStateChanged);
         encodingButtonGroup.add(latin1EncodingMenuItem);
         JMenu boldMenu = uiBuilder.addJMenu(viewMenu, 'b', "Render bold using");
         ButtonGroup boldButtonGroup = new ButtonGroup();
         allowBoldMenuItem = uiBuilder.addJRadioButtonMenuItem(
-                boldMenu, 'f', "Color + Font", null, false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                allowBoldMenuItemStateChanged(evt);
-            }
-        });
+                boldMenu, 'f', "Color + Font", null, false, this::allowBoldMenuItemStateChanged);
         allowBoldMenuItem.setSelected(true);
         boldButtonGroup.add(allowBoldMenuItem);
         disallowBoldMenuItem = uiBuilder.addJRadioButtonMenuItem(
-                boldMenu, 'c', "Color only", null, false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                disallowBoldMenuItemStateChanged(evt);
-            }
-        });
+                boldMenu, 'c', "Color only", null, false, this::disallowBoldMenuItemStateChanged);
         boldButtonGroup.add(disallowBoldMenuItem);
         JMenu antialiasingMenu = uiBuilder.addJMenu(viewMenu, 'a', "Antialiasing");
         ButtonGroup antialiasButtonGroup = new ButtonGroup();
         antialiasingOffMenuItem = uiBuilder.addJRadioButtonMenuItem(
-                antialiasingMenu, 'o', "Off", null, false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                antialiasingOffMenuItemStateChanged(evt);
-            }
-        });
+                antialiasingMenu, 'o', "Off", null, false, this::antialiasingOffMenuItemStateChanged);
         antialiasButtonGroup.add(antialiasingOffMenuItem);
         antialiasingDefaultMenuItem = uiBuilder.addJRadioButtonMenuItem(
-                antialiasingMenu, 'd', "Default", null, false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                antialiasingDefaultMenuItemStateChanged(evt);
-            }
-        });
+                antialiasingMenu, 'd', "Default", null, false, this::antialiasingDefaultMenuItemStateChanged);
         antialiasButtonGroup.add(antialiasingDefaultMenuItem);
         antialiasingDefaultMenuItem.setSelected(true);
         antialiasingRGBMenuItem = uiBuilder.addJRadioButtonMenuItem(
                 antialiasingMenu, 'r', "Subpixel (RGB)", null, false,
-                new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                antialiasingRGBMenuItemStateChanged(evt);
-            }
-        });
+                this::antialiasingRGBMenuItemStateChanged);
         antialiasButtonGroup.add(antialiasingRGBMenuItem);
         antialiasingBGRMenuItem = uiBuilder.addJRadioButtonMenuItem(
                 antialiasingMenu, 'b', "Subpixel (BGR)", null, false,
-                new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                antialiasingBGRMenuItemStateChanged(evt);
-            }
-        });
+                this::antialiasingBGRMenuItemStateChanged);
         antialiasButtonGroup.add(antialiasingBGRMenuItem);
         uiBuilder.addJMenuItem(viewMenu, 's', "Set Font...", null, false,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                setFontMenuItemActionPerformed(evt);
-            }
-        });
+                this::setFontMenuItemActionPerformed);
 
         JMenu goMenu = uiBuilder.addJMenu(menuBar, 'g', "Go");
         playPauseMenuItem = uiBuilder.addJCheckBoxMenuItem(goMenu, 'p',
-                "Play", "SPACE", true, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                updatePlayPaused(evt);
-            }
-        });
+                "Play", "SPACE", true, this::updatePlayPaused);
         uiBuilder.addJSeparator(goMenu);
         uiBuilder.addJMenuItem(goMenu, 't', "To Start", "HOME", true,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goToStart(evt);
-            }
-        });
+                this::goToStart);
         uiBuilder.addJMenuItem(goMenu, 'e', "To End", "END", true,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goToEnd(evt);
-            }
-        });
+                this::goToEnd);
         uiBuilder.addJMenuItem(goMenu, 'n', "Back One Frame", "LEFT", true,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goBackOneFrame(evt);
-            }
-        });
+                this::goBackOneFrame);
         uiBuilder.addJMenuItem(goMenu, 'f', "Forward One Frame", "RIGHT", true,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goForwardOneFrame(evt);
-            }
-        });
+                this::goForwardOneFrame);
         uiBuilder.addJMenuItem(goMenu, 'a', "To Frame...", "G", true,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goToSpecificFrameMenuItemActionPerformed(evt);
-            }
-        });
+                this::goToSpecificFrameMenuItemActionPerformed);
         uiBuilder.addJSeparator(goMenu);
         uiBuilder.addJMenuItem(goMenu, 'q', "Quicker", "UP", false,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goQuickerMenuItemActionPerformed(evt);
-            }
-        });
+                this::goQuickerMenuItemActionPerformed);
         uiBuilder.addJMenuItem(goMenu, 's', "Slower", "DOWN", false,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goSlowerMenuItemActionPerformed(evt);
-            }
-        });
+                this::goSlowerMenuItemActionPerformed);
         uiBuilder.addJMenuItem(goMenu, 'n', "Normal Speed", "1", false,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goTimesOneMenuItemActionPerformed(evt);
-            }
-        });
+                this::goTimesOneMenuItemActionPerformed);
         uiBuilder.addJMenuItem(goMenu, 'i', "Specific Speed", "X", false,
-                new ActionListener () {
-            public void actionPerformed(ActionEvent evt) {
-                speedSpinnerMouseClicked(null);
-            }
-        });
+                evt -> speedSpinnerMouseClicked(null));
 
         uiBuilder.addJMenuItem(goMenu, 'r', "Reverse Direction", "R", false,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                goRewindMenuItemActionPerformed(evt);
-            }
-        });
+                this::goRewindMenuItemActionPerformed);
         autoskipMenuItem =uiBuilder.addJCheckBoxMenuItem(goMenu,
-                'k', "Skip Inactivity", "L", false, new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                autoskipMenuItemStateChanged(evt);
-            }
-        });
+                'k', "Skip Inactivity", "L", false, this::autoskipMenuItemStateChanged);
         JMenu helpMenu = uiBuilder.addJMenu(menuBar, 'h', "Help");
         uiBuilder.addJMenuItem(helpMenu, 'a', "About...", null, false,
-                new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                aboutMenuItemActionPerformed(evt);
-            }
-        });
+                this::aboutMenuItemActionPerformed);
         uiBuilder.addJMenuItem(helpMenu, 'l', "License information...", null,
-                false, new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                licenceMenuItemActionPerformed(evt);
-            }
-        });
+                false, this::licenceMenuItemActionPerformed);
 
         setJMenuBar(menuBar);
         uiBuilder.massSetEnabled(false);
@@ -975,7 +766,7 @@ public class MainFrame extends JFrame
                 encodingMenu, "Go to which frame?", ""+(previousFrameIndex+1));
         if (frameString == null) return;
         try {
-            goToSpecificFrame(Integer.valueOf(frameString) - 1, true);
+            goToSpecificFrame(Integer.parseInt(frameString) - 1, true);
         } catch (NumberFormatException ex) {
             // ignore invalid input
         }
@@ -1185,8 +976,7 @@ public class MainFrame extends JFrame
         Matcher m = Pattern.compile("\\s*(\\d+)\\s*x\\s*(\\d+)\\s*").
                 matcher(s);
         if (!m.matches()) return;
-        getCurrentTtyrec().setForcedSize(
-                Integer.valueOf(m.group(1)), Integer.valueOf(m.group(2)));
+        getCurrentTtyrec().setForcedSize(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)));
         autodetectTerminalSizeMenuItem.setSelected(false);
         fixedTerminalSizeMenuItem.setSelected(true);
         getCurrentSource().repeatCurrentDecodeWorker();
@@ -1301,21 +1091,9 @@ public class MainFrame extends JFrame
         unloadFile();
         currentSource = new InputStreamTtyrecSource(iStream);
         getCurrentSource().completeUnpause();
-        getCurrentSource().addDecodeListener(new ProgressListener() {
-            public void progressMade() {
-                decodeProgressMade();
-            }
-        });
-        getCurrentSource().addAnalysisListener(new ProgressListener() {
-            public void progressMade() {
-                analysisProgressMade();
-            }
-        });
-        getCurrentSource().addReadListener(new ProgressListener() {
-            public void progressMade() {
-                readProgressMade();
-            }
-        });
+        getCurrentSource().addDecodeListener(this::decodeProgressMade);
+        getCurrentSource().addAnalysisListener(this::analysisProgressMade);
+        getCurrentSource().addReadListener(this::readProgressMade);
         getCurrentSource().start();
         setTimeLabels();
         massSetEnabled(true);
@@ -1797,8 +1575,7 @@ public class MainFrame extends JFrame
             }
             if (me.getCurrentSource() != null && pendingFrame != null) {
                 try {
-                    me.getCurrentSource().setWantedFrame(
-                            Integer.valueOf(pendingFrame) - 1);
+                    me.getCurrentSource().setWantedFrame(Integer.parseInt(pendingFrame) - 1);
                     pendingFrame = null;
                 } catch (NumberFormatException nfe) {
                     // do nothing

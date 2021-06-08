@@ -486,9 +486,7 @@ public class VDURenderer {
                         }
                     }
                 } else if (renderHTML) {
-                    for (int i = 0; i < addr; i++) {
-                        html.append(' ');
-                    }
+                    html.append(" ".repeat(Math.max(0, addr)));
                 }
                 if (renderHTML) {
                     html.append("</span>");

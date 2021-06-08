@@ -52,8 +52,8 @@ class TelnetFilterStream extends FilterInputStream {
     public TelnetFilterStream(InputStream i, OutputStream o) throws IOException {
         super(i);
         this.o = o;
-        wonts = new HashSet<Byte>();
-        donts = new HashSet<Byte>();
+        wonts = new HashSet<>();
+        donts = new HashSet<>();
         // Offer to send binary, ask the other end of the connection to do the
         // same. Also offer to send environment variables, and say that we're
         // happy for the other side to suppress goahead, and to handle echoing

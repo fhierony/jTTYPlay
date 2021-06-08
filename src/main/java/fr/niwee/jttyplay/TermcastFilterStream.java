@@ -92,54 +92,51 @@ class TermcastFilterStream extends TelnetFilterStream {
             final String finalPath = path;
             final TermcastFilterStream finalThis = this;
             // Start scanning for the end of the menu.
-            new Thread() {
-                @Override
-                public void run() {
-                    while(true) {
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException ex) {
-                            return;
-                        }
-                        if (new Date().getTime() -
-                                lastActivity.getTime() > 1000) {
-                            // Look for an instance of the player we want.
-                            // If there is one, press the matching button
-                            // and break out of this loop; if there isn't,
-                            // press >.
-                            for(char c = 'a'; c < 'z'; c++) {
-                                Pattern p = Pattern.compile(
-                                        c + "\\) " + finalPath,
-                                        Pattern.CASE_INSENSITIVE);
-                                if (checkTerminal.containsPattern(p)) {
-                                    try {
-                                        System.err.println("Player found: "+c);
-                                        state = TermcastState.WATCHING;
-                                        if (checkTerminal.containsPattern(
-                                                Pattern.compile(
-                                                "\\(use uppercase to try " +
-                                                "to change size\\)")))
-                                            finalThis.stream.write(
-                                                    Character.toUpperCase(c));
-                                        else {
-                                            finalThis.stream.write(c);
-                                            finalThis.stream.write('r');
-                                        }
-                                        return;
-                                    } catch (IOException ex) {
-                                        return;
+            new Thread(() -> {
+                while(true) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ex) {
+                        return;
+                    }
+                    if (new Date().getTime() -
+                            lastActivity.getTime() > 1000) {
+                        // Look for an instance of the player we want.
+                        // If there is one, press the matching button
+                        // and break out of this loop; if there isn't,
+                        // press >.
+                        for(char c = 'a'; c < 'z'; c++) {
+                            Pattern p1 = Pattern.compile(
+                                    c + "\\) " + finalPath,
+                                    Pattern.CASE_INSENSITIVE);
+                            if (checkTerminal.containsPattern(p1)) {
+                                try {
+                                    System.err.println("Player found: "+c);
+                                    state = TermcastState.WATCHING;
+                                    if (checkTerminal.containsPattern(
+                                            Pattern.compile(
+                                            "\\(use uppercase to try " +
+                                            "to change size\\)")))
+                                        finalThis.stream.write(
+                                                Character.toUpperCase(c));
+                                    else {
+                                        finalThis.stream.write(c);
+                                        finalThis.stream.write('r');
                                     }
+                                    return;
+                                } catch (IOException ex) {
+                                    return;
                                 }
                             }
-                            try {
-                                finalThis.stream.write('>');
-                            } catch (IOException ex) {
-                                return;
-                            }
+                        }
+                        try {
+                            finalThis.stream.write('>');
+                        } catch (IOException ex) {
+                            return;
                         }
                     }
                 }
-            }.start();
+            }).start();
         }
     }
 }

@@ -4,8 +4,6 @@
  */
 package fr.niwee.jttyplay;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
@@ -86,14 +84,10 @@ public abstract class TtyrecSource extends Thread {
         bytestream = new ByteChunkList();
         backportAnalyze = null;
         backportDecode = null;
-        analysisListeners = new HashSet<ProgressListener>();
-        decodeListeners = new HashSet<ProgressListener>();
-        readListeners = new HashSet<ProgressListener>();
-        listenerTimer = new Timer(100, new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                firePendingEvents();
-            }
-        });
+        analysisListeners = new HashSet<>();
+        decodeListeners = new HashSet<>();
+        readListeners = new HashSet<>();
+        listenerTimer = new Timer(100, e -> firePendingEvents());
         listenerTimer.restart();
         // The analyzer must be created before the decoder.
         // The analyzer starts with the most obvious-to-reject format (GZIP),

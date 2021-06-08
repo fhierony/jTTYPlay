@@ -56,9 +56,9 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
 
         speedButtonGroup = new javax.swing.ButtonGroup();
         javax.swing.JLabel jLabel1 = new javax.swing.JLabel();
-        containerComboBox = new javax.swing.JComboBox();
+        containerComboBox = new javax.swing.JComboBox<>();
         javax.swing.JLabel jLabel2 = new javax.swing.JLabel();
-        codecComboBox = new javax.swing.JComboBox();
+        codecComboBox = new javax.swing.JComboBox<>();
         linearSpeedButton = new javax.swing.JRadioButton();
         logSpeedButton = new javax.swing.JRadioButton();
         fixedSpeedButton = new javax.swing.JRadioButton();
@@ -70,7 +70,7 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
         okButton = new javax.swing.JButton();
         progressBar = new javax.swing.JProgressBar();
         javax.swing.JLabel jLabel4 = new javax.swing.JLabel();
-        sizeComboBox = new javax.swing.JComboBox();
+        sizeComboBox = new javax.swing.JComboBox<>();
         allowBoldCheckBox = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -83,7 +83,7 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         getContentPane().add(jLabel1, gridBagConstraints);
 
-        containerComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "AVI" }));
+        containerComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "AVI" }));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
@@ -98,7 +98,7 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         getContentPane().add(jLabel2, gridBagConstraints);
 
-        codecComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "ZMBV", "Uncompressed" }));
+        codecComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "ZMBV", "Uncompressed" }));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
@@ -128,11 +128,7 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
 
         speedButtonGroup.add(fixedSpeedButton);
         fixedSpeedButton.setText("Use fixed framerate:");
-        fixedSpeedButton.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                fixedSpeedButtonStateChanged(evt);
-            }
-        });
+        fixedSpeedButton.addChangeListener(this::fixedSpeedButtonStateChanged);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
@@ -140,7 +136,7 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         getContentPane().add(fixedSpeedButton, gridBagConstraints);
 
-        fixedSpeedSpinner.setModel(new javax.swing.SpinnerNumberModel(Double.valueOf(1.0d), Double.valueOf(1.0d), null, Double.valueOf(1.0d)));
+        fixedSpeedSpinner.setModel(new javax.swing.SpinnerNumberModel(1.0d, 1.0d, null, 1.0d));
         fixedSpeedSpinner.setEnabled(false);
         fixedSpeedSpinner.setPreferredSize(new java.awt.Dimension(60, 26));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -167,19 +163,11 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
         getContentPane().add(antialiasingCheckBox, gridBagConstraints);
 
         cancelButton.setText("Cancel");
-        cancelButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cancelButtonActionPerformed(evt);
-            }
-        });
+        cancelButton.addActionListener(this::cancelButtonActionPerformed);
         jPanel1.add(cancelButton);
 
         okButton.setText("OK");
-        okButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                okButtonActionPerformed(evt);
-            }
-        });
+        okButton.addActionListener(this::okButtonActionPerformed);
         jPanel1.add(okButton);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -207,7 +195,7 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
         getContentPane().add(jLabel4, gridBagConstraints);
 
         sizeComboBox.setEditable(true);
-        sizeComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "480", "720", "1080" }));
+        sizeComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "480", "720", "1080" }));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 5;
@@ -241,7 +229,7 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
         int height;
         try {
             String s = (String)sizeComboBox.getModel().getSelectedItem();
-            height = Integer.valueOf(s);
+            height = Integer.parseInt(s);
             if (height < 1) throw new NumberFormatException();
         } catch(NumberFormatException ex) {
             // Insist on having a numerical height...
@@ -277,85 +265,82 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
 
         final JDialog finalThis = this;
         
-        Runnable videoEncodeThread = new Runnable() {
-
-            public void run() {
-                try {
-                    ttyrec.encodeVideo(encodingContainer,
-                            codecs[codecComboBox.getSelectedIndex()],
-                            linearSpeedButton.isSelected()
-                            ? new FrameTimeConvertor() {
-                        
-                        public double getFrameRate() {
-                            return 30.0;
-                        }
-                        
-                        public void resetConvertor() {
-                        }
-                        
-                        public int convertFrameTime(double frameTime) {
-                            return (int) (frameTime * 30);
-                        }
-                    } : logSpeedButton.isSelected()
-                            ? new FrameTimeConvertor() {
-                        
-                        private double lastFrameTime = 0;
-                        private double adjustedLastFrameTime = 0;
-                        
-                        public double getFrameRate() {
-                            return 30.0;
-                        }
-                        
-                        public void resetConvertor() {
-                            lastFrameTime = 0;
-                            adjustedLastFrameTime = 0;
-                        }
-                        
-                        public int convertFrameTime(double frameTime) {
-                            if (frameTime - lastFrameTime > 1) {
-                                adjustedLastFrameTime +=
-                                        1 + Math.log(frameTime - lastFrameTime);
-                            } else {
-                                adjustedLastFrameTime += frameTime - lastFrameTime;
-                            }
-                            lastFrameTime = frameTime;
-                            return (int) (adjustedLastFrameTime * 30);
-                            
-                        }
-                    } : new FrameTimeConvertor() {
-                        
-                        int frameNumber = 0;
-                        
-                        public double getFrameRate() {
-                            return fixedFramerate;
-                        }
-                        
-                        public void resetConvertor() {
-                            frameNumber = 0;
-                        }
-                        
-                        public int convertFrameTime(double frameTime) {
-                            return frameNumber++;
-                        }
-                    });
-                    JFileChooser jfc = new JFileChooser();
-                    int rv = jfc.showSaveDialog(finalThis);
-                    if (rv == JFileChooser.APPROVE_OPTION) {
-                        File f = jfc.getSelectedFile();
-                        try (OutputStream os = new FileOutputStream(f)) {
-                            encodingContainer.outputEncode(os);
-                        } catch(IOException ex) {
-                            JOptionPane.showMessageDialog(finalThis,
-                                    "Could not save file:" + ex.getLocalizedMessage(),
-                                    "Save as Video", JOptionPane.ERROR_MESSAGE);
-                        }
+        Runnable videoEncodeThread = () -> {
+            try {
+                ttyrec.encodeVideo(encodingContainer,
+                        codecs[codecComboBox.getSelectedIndex()],
+                        linearSpeedButton.isSelected()
+                        ? new FrameTimeConvertor() {
+                    
+                    public double getFrameRate() {
+                        return 30.0;
                     }
-                    finalThis.dispose();
-                } catch (CancellationException e) {
-                    // nothing to do
-                } finally {
-                    encodingContainer = null; // make sure it doesn't leak
+                    
+                    public void resetConvertor() {
+                    }
+                    
+                    public int convertFrameTime(double frameTime) {
+                        return (int) (frameTime * 30);
+                    }
+                } : logSpeedButton.isSelected()
+                        ? new FrameTimeConvertor() {
+                    
+                    private double lastFrameTime = 0;
+                    private double adjustedLastFrameTime = 0;
+                    
+                    public double getFrameRate() {
+                        return 30.0;
+                    }
+                    
+                    public void resetConvertor() {
+                        lastFrameTime = 0;
+                        adjustedLastFrameTime = 0;
+                    }
+                    
+                    public int convertFrameTime(double frameTime) {
+                        if (frameTime - lastFrameTime > 1) {
+                            adjustedLastFrameTime +=
+                                    1 + Math.log(frameTime - lastFrameTime);
+                        } else {
+                            adjustedLastFrameTime += frameTime - lastFrameTime;
+                        }
+                        lastFrameTime = frameTime;
+                        return (int) (adjustedLastFrameTime * 30);
+                        
+                    }
+                } : new FrameTimeConvertor() {
+                    
+                    int frameNumber = 0;
+                    
+                    public double getFrameRate() {
+                        return fixedFramerate;
+                    }
+                    
+                    public void resetConvertor() {
+                        frameNumber = 0;
+                    }
+                    
+                    public int convertFrameTime(double frameTime) {
+                        return frameNumber++;
+                    }
+                });
+                JFileChooser jfc = new JFileChooser();
+                int rv = jfc.showSaveDialog(finalThis);
+                if (rv == JFileChooser.APPROVE_OPTION) {
+                    File f = jfc.getSelectedFile();
+                    try (OutputStream os = new FileOutputStream(f)) {
+                        encodingContainer.outputEncode(os);
+                    } catch(IOException ex) {
+                        JOptionPane.showMessageDialog(finalThis,
+                                "Could not save file:" + ex.getLocalizedMessage(),
+                                "Save as Video", JOptionPane.ERROR_MESSAGE);
+                    }
                 }
+                finalThis.dispose();
+            } catch (CancellationException e) {
+                // nothing to do
+            } finally {
+                encodingContainer = null; // make sure it doesn't leak
             }
         };
         new Thread(videoEncodeThread).start();
@@ -364,15 +349,15 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBox allowBoldCheckBox;
     private javax.swing.JCheckBox antialiasingCheckBox;
-    private javax.swing.JComboBox codecComboBox;
-    private javax.swing.JComboBox containerComboBox;
+    private javax.swing.JComboBox<String> codecComboBox;
+    private javax.swing.JComboBox<String> containerComboBox;
     private javax.swing.JRadioButton fixedSpeedButton;
     private javax.swing.JSpinner fixedSpeedSpinner;
     private javax.swing.JRadioButton linearSpeedButton;
     private javax.swing.JRadioButton logSpeedButton;
     private javax.swing.JButton okButton;
     private javax.swing.JProgressBar progressBar;
-    private javax.swing.JComboBox sizeComboBox;
+    private javax.swing.JComboBox<String> sizeComboBox;
     private javax.swing.ButtonGroup speedButtonGroup;
     // End of variables declaration//GEN-END:variables
 
@@ -380,13 +365,10 @@ public class SaveAsVideoDialog extends JDialog implements ProgressListener {
     public void progressMade() {
         /* This might be called from a weird thread (in fact, probably will
          * be), so we need to use invokeLater to get back to the Swing thread. */
-        Runnable runnable = new Runnable() {
-            public void run() {
-                progressBar.setValue(encodingContainer.getFramesEncoded());
-                progressBar.setString(encodingContainer.getFramesEncoded() +
-                        " / " + progressBar.getMaximum());
-                progressBar.setStringPainted(true);
-            }
+        Runnable runnable = () -> {
+            progressBar.setValue(encodingContainer.getFramesEncoded());
+            progressBar.setString(encodingContainer.getFramesEncoded() + " / " + progressBar.getMaximum());
+            progressBar.setStringPainted(true);
         };
         SwingUtilities.invokeLater(runnable);
     }

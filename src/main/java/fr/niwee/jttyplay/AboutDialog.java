@@ -140,21 +140,13 @@ public class AboutDialog extends JDialog {
         licenceButton.setMnemonic('l');
         licenceButton.setText("Licence information");
         licenceButton.setName("licenceButton"); // NOI18N
-        licenceButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                licenceButtonActionPerformed(evt);
-            }
-        });
+        licenceButton.addActionListener(this::licenceButtonActionPerformed);
         jPanel2.add(licenceButton);
 
         closeButton.setMnemonic('c');
         closeButton.setText("Close");
         closeButton.setName("closeButton"); // NOI18N
-        closeButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                closeButtonActionPerformed(evt);
-            }
-        });
+        closeButton.addActionListener(this::closeButtonActionPerformed);
         jPanel2.add(closeButton);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -168,11 +160,7 @@ public class AboutDialog extends JDialog {
 
     private void licenceButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_licenceButtonActionPerformed
         final JDialog thisDialog = this;
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                thisDialog.dispose();
-            }
-        });
+        SwingUtilities.invokeLater(thisDialog::dispose);
         new LicenceDialog(parent).setVisible(true);
     }//GEN-LAST:event_licenceButtonActionPerformed
 

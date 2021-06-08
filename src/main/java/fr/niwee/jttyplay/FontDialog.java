@@ -44,7 +44,7 @@ public class FontDialog extends javax.swing.JDialog {
         java.awt.GridBagConstraints gridBagConstraints;
 
         fontComboBoxLabel = new javax.swing.JLabel();
-        fontComboBox = new javax.swing.JComboBox();
+        fontComboBox = new javax.swing.JComboBox<>();
         cancelButton = new javax.swing.JButton();
         okButton = new javax.swing.JButton();
 
@@ -59,7 +59,7 @@ public class FontDialog extends javax.swing.JDialog {
         gridBagConstraints.insets = new java.awt.Insets(7, 7, 3, 7);
         getContentPane().add(fontComboBoxLabel, gridBagConstraints);
 
-        fontComboBox.setModel(new DefaultComboBoxModel(
+        fontComboBox.setModel(new DefaultComboBoxModel<>(
             GraphicsEnvironment.getLocalGraphicsEnvironment().
             getAvailableFontFamilyNames()));
     fontComboBox.getModel().setSelectedItem(
@@ -75,11 +75,7 @@ public class FontDialog extends javax.swing.JDialog {
 
     cancelButton.setMnemonic('c');
     cancelButton.setText("Cancel");
-    cancelButton.addActionListener(new java.awt.event.ActionListener() {
-        public void actionPerformed(java.awt.event.ActionEvent evt) {
-            cancelButtonActionPerformed(evt);
-        }
-    });
+    cancelButton.addActionListener(this::cancelButtonActionPerformed);
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
     gridBagConstraints.gridy = 2;
@@ -90,11 +86,7 @@ public class FontDialog extends javax.swing.JDialog {
 
     okButton.setMnemonic('s');
     okButton.setText("Set Font");
-    okButton.addActionListener(new java.awt.event.ActionListener() {
-        public void actionPerformed(java.awt.event.ActionEvent evt) {
-            okButtonActionPerformed(evt);
-        }
-    });
+    okButton.addActionListener(this::okButtonActionPerformed);
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
     gridBagConstraints.gridy = 2;
@@ -117,7 +109,7 @@ public class FontDialog extends javax.swing.JDialog {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
-    private javax.swing.JComboBox fontComboBox;
+    private javax.swing.JComboBox<String> fontComboBox;
     private javax.swing.JLabel fontComboBoxLabel;
     private javax.swing.JButton okButton;
     // End of variables declaration//GEN-END:variables

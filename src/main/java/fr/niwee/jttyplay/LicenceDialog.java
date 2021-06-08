@@ -56,11 +56,7 @@ public class LicenceDialog extends javax.swing.JDialog {
         closeButton.setMnemonic('c');
         closeButton.setText("Close");
         closeButton.setName("closeButton"); // NOI18N
-        closeButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                closeButtonActionPerformed(evt);
-            }
-        });
+        closeButton.addActionListener(this::closeButtonActionPerformed);
         bottomPanel.add(closeButton);
 
         getContentPane().add(bottomPanel, java.awt.BorderLayout.SOUTH);
@@ -90,7 +86,7 @@ public class LicenceDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_closeButtonActionPerformed
 
     private String getLicenceText() {
-        String fname = "jettyplay/resources/COPYING.txt";
+        String fname = "COPYING.txt";
         try {
             InputStream i = LicenceDialog.class.getClassLoader().getResource(fname).openStream();
             BufferedReader b = new BufferedReader(new InputStreamReader(i));
